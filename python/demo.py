@@ -3,7 +3,7 @@ import logging
 import time
 import json
 
-from indy import pool
+from indy import pool, wallet, did
 
 from indy.error import IndyError, ErrorCode
 
@@ -35,7 +35,29 @@ async def run():
 
     pool_handle = await pool.open_pool_ledger(pool_name, None)
 
-    logger.info("==============================")
+    logger.info("==========================================================================")
+    logger.info("== Getting Trust Anchor credentials for CUET(Chittagong University of Engineering & Technology),"
+                " BJIT Group, City Bank and Government ==")
+    logger.info("**************************************************************************")
+
+    logger.info("\"Bd Steward\" -> Create wallet")
+    steward_wallet_config = json.dumps({"id" : "bd_steward_wallet"})
+    steward_wallet_credentials = json.dumps({"key": "steward_wallet_key"})
+    try:
+        await wallet.create_wallet(steward_wallet_config, steward_wallet_credentials)
+    except IndyError as ex:
+        if ex.error_code == ErrorCode.WalletAlreadyExistsError:
+            pass
+
+    steward_wallet = await  wallet.open_wallet(steward_wallet_config, steward_wallet_credentials)
+
+    logger.info("\"Bd Steward\" -> Create and store in Wallet DID from seed")
+    steward_did_info = {'seed': '000000000000000000000000Steward1'}
+    (steward_did, steward_key) = await did.create_and_store_my_did(steward_wallet, json.dumps(steward_did_info))
+
+    logger.info("==========================================================================")
+
+
 
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@ import time
 import json
 from typing import Optional
 
-from indy import pool, wallet, did, ledger
+from indy import pool, wallet, did, ledger, crypto
 
 from indy.error import IndyError, ErrorCode
 
@@ -13,9 +13,10 @@ from src.utils import run_coroutine, get_pool_genesis_txn_path, PROTOCOL_VERSION
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+
 async def run():
-    bashCommand = "bash refresh.sh"
-    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+    bash_command = "bash refresh.sh"
+    process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
     output, error = process.communicate()
 
     logger.info("Code Started -> started")
@@ -58,6 +59,7 @@ async def run():
 
     logger.info("==========================================================================")
 
+
 async def onboarding(pool_handle, _from, from_wallet, from_did, to, to_wallet: Optional[str], to_wallet_config: str,
                      to_wallet_credentials: str):
     logger.info("\"{}\" -> Create and store in Wallet \"{} {}\" DID".format(_from, _from, to))
@@ -89,12 +91,28 @@ async def onboarding(pool_handle, _from, from_wallet, from_did, to, to_wallet: O
 
     logger.info("\"{}\" -> Anoncrypt connection response for \"{}\" with \"{} {}\" DID, verkey and nonce"
                 .format(to, _from, to, _from))
-
     connection_response = json.dumps({
         'did': to_from_did,
         'verkey': to_from_key,
         'nonce': connection_request['nonce']
     })
+    anoncrypted_connection_response = await crypto.anon_crypt(from_to_verkey, connection_response.encode('utf-8'))
+
+    logger.info("\"{}\" -> Send anoncrypted connection response to \"{}\"".format(to, _from))
+
+    logger.info("\"{}\" -> Anondecrypt connection response from \"{}\"".format(_from, to))
+    decrypted_connection_response = \
+        json.loads((await crypto.anon_decrypt(from_wallet, from_to_key,
+                                              anoncrypted_connection_response)).decode("utf-8"))
+
+    logger.info("\"{}\" -> Authenticates \"{}\" by comparision of Nonce".format(_from, to))
+    assert connection_request['nonce'] == decrypted_connection_response['nonce']
+
+    logger.info("\"{}\" -> Send Nym to Ledger for \"{} {}\" DID".format(_from, to, _from))
+    await send_nym(pool_handle, from_wallet, from_did, to_from_did, to_from_key, None)
+
+    return to_wallet, from_to_key, to_from_did, to_from_key, decrypted_connection_response
+
 
 async def send_nym(pool_handle, wallet_handle, _did, new_did, new_key, role):
     nym_request = await ledger.build_nym_request(_did, new_did, new_key, None, role)

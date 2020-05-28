@@ -130,6 +130,12 @@ async def send_nym(pool_handle, wallet_handle, _did, new_did, new_key, role):
     await ledger.sign_and_submit_request(pool_handle, wallet_handle, _did, nym_request)
 
 
+async def auth_decrypt(wallet_handle, key, message):
+    from_verkey, decrypted_message_json = await crypto.anon_decrypt(wallet_handle, key, message)
+    decrypted_message_json = decrypted_message_json.decode("utf-8")
+    decrypted_message = json.loads(decrypted_message_json)
+    return from_verkey, decrypted_message_json, decrypted_message
+
 if __name__ == '__main__':
     run_coroutine(run)
     time.sleep(1)

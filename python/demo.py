@@ -58,6 +58,17 @@ async def run():
     (steward_did, steward_key) = await did.create_and_store_my_did(steward_wallet, json.dumps(steward_did_info))
 
     logger.info("==========================================================================")
+    logger.info("== Getting Trust Anchor credentials - Government Onboarding ==")
+    logger.info("**************************************************************************")
+
+    government_wallet_config = json.dumps({"id": "government_wallet"})
+    government_wallet_credentials = json.dumps({"key": "government_wallet_key"})
+    government_wallet, steward_government_key, government_steward_did, government_steward_key, _ \
+        = await onboarding(pool_handle, "Bd Steward", steward_wallet, steward_did, "Government", None,
+                           government_wallet_config, government_wallet_credentials)
+
+
+    logger.info("==========================================================================")
 
 
 async def onboarding(pool_handle, _from, from_wallet, from_did, to, to_wallet: Optional[str], to_wallet_config: str,

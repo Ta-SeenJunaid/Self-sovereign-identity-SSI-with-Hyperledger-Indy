@@ -125,14 +125,39 @@ async def onboarding(pool_handle, _from, from_wallet, from_did, to, to_wallet: O
     return to_wallet, from_to_key, to_from_did, to_from_key, decrypted_connection_response
 
 
-async def send_nym(pool_handle, wallet_handle, _did, new_did, new_key, role):
-    nym_request = await ledger.build_nym_request(_did, new_did, new_key, None, role)
-    await ledger.sign_and_submit_request(pool_handle, wallet_handle, _did, nym_request)
+async def get_verinym(pool_handle, _from, from_wallet, from_did, from_to_key,
+                      to, to_wallet, to_from_did, to_from_key, role):
+    logger.info("\"{}\" -> Create and store in Wallet \"{}\" new DID".format(to, to))
+    (to_did, to_key) = await did.create_and_store_my_did(to_wallet, "{}")
+
+    logger.info("\"{}\" -> Authcrypt \"{} DID info\" for \"{}\"".format(to, to, _from))
+    did_info_json = json.dumps({
+        'did': to_did,
+        'verkey': to_key
+    })
+    authcrypted_did_info_json = \
+        await crypto.auth_crypt(to_wallet, to_from_key, from_to_key, did_info_json.encode('utf-8'))
+
+    logger.info("\"{}\" -> Send authcrypted \"{} DID info\" to {}".format(to, to, _from))
+
+    logger.info("\"{}\" -> Authdecrypted \"{} DID info\" from {}".format(_from, to, to))
+    sender_verkey, authdecrypted_did_info_json, authdecrypted_did_info = \
+        await auth_decrypt(from_wallet, from_to_key, authcrypted_did_info_json)
+
+    logger.info("\"{}\" -> Authenticate {} by comparision of Verkeys".format(_from, to, ))
+    assert sender_verkey == await did.key_for_did(pool_handle, from_wallet, to_from_did)
+
+    logger.info("\"{}\" -> Send Nym to Ledger for \"{} DID\" with {} Role".format(_from, to, role))
+    await send_nym(pool_handle, from_wallet, from_did, authdecrypted_did_info['did'],
+                   authdecrypted_did_info['verkey'], role)
+
+    return to_did
 
 
 async def send_nym(pool_handle, wallet_handle, _did, new_did, new_key, role):
     nym_request = await ledger.build_nym_request(_did, new_did, new_key, None, role)
     await ledger.sign_and_submit_request(pool_handle, wallet_handle, _did, nym_request)
+
 
 async def auth_decrypt(wallet_handle, key, message):
     from_verkey, decrypted_message_json = await crypto.anon_decrypt(wallet_handle, key, message)

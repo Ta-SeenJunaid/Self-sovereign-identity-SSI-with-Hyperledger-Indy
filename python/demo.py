@@ -4,7 +4,7 @@ import time
 import json
 from typing import Optional
 
-from indy import pool, wallet, did, ledger, crypto
+from indy import pool, wallet, did, ledger, crypto, anoncreds
 
 from indy.error import IndyError, ErrorCode
 
@@ -110,6 +110,25 @@ async def run():
 
     bjit_did = await get_verinym(pool_handle, "Bd Steward", steward_wallet, steward_did, steward_bjit_key,
                                  "Bjit", bjit_wallet, bjit_steward_did, bjit_steward_key, 'TRUST_ANCHOR')
+
+
+    logger.info("==========================================================================")
+    logger.info("== Getting Trust Anchor credentials - City Onboarding ==")
+    logger.info("**************************************************************************")
+
+    city_wallet_config = json.dumps({"id": " city_wallet"})
+    city_wallet_credentials = json.dumps({"key": "city_wallet_key"})
+    city_wallet, steward_city_key, city_steward_did, city_steward_key, _ = \
+        await onboarding(pool_handle, "Bd Steward", steward_wallet, steward_did, "City", None,
+                         city_wallet_config, city_wallet_credentials)
+
+    logger.info("==========================================================================")
+    logger.info("== Getting Trust Anchor credentials - City Onboarding ==")
+    logger.info("**************************************************************************")
+
+    city_did = await get_verinym(pool_handle, "Bd Steward", steward_wallet, steward_did, steward_city_key,
+                                   "City", city_wallet, city_steward_did, city_steward_key, 'TRUST_ANCHOR')
+
 
     logger.info("==========================================================================")
 

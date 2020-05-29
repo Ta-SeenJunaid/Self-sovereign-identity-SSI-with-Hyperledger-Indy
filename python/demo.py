@@ -146,8 +146,23 @@ async def run():
 
     logger.info("\"Government\" -> Send \"Job-Certificate\" Schema to Ledger")
     await send_schema(pool_handle, government_wallet, government_did, job_certificate_schema)
-    logger.info("==========================================================================")
 
+
+    logger.info("\"Government\" -> Create \"Transcript\" Schema")
+    transcript = {
+        'name': 'Transcript',
+        'version': '1.0.1',
+        'attributes': ['first_name', 'last_name', 'degree', 'status', 'year', 'average', 'ssn']
+    }
+    (transcript_schema_id, transcript_schema) = \
+        await anoncreds.issuer_create_schema(government_did, transcript['name'], transcript['version'],
+                                             json.dumps(transcript['attributes']))
+
+    logger.info("\"Government\" -> Send \"Transcript\" Schema to Ledger")
+    await send_schema(pool_handle, government_wallet, government_did, transcript_schema)
+
+    time.sleep(1)
+    logger.info("==========================================================================")
 
 
 async def onboarding(pool_handle, _from, from_wallet, from_did, to, to_wallet: Optional[str], to_wallet_config: str,

@@ -162,7 +162,8 @@ async def run():
     await send_schema(pool_handle, government_wallet, government_did, transcript_schema)
 
     time.sleep(1)
-    logger.info("==========================================================================")
+
+
 
 
 async def onboarding(pool_handle, _from, from_wallet, from_did, to, to_wallet: Optional[str], to_wallet_config: str,
@@ -257,6 +258,11 @@ async def send_schema(pool_handle, wallet_handle, _did, schema):
     schema_request = await ledger.build_schema_request(_did, schema)
     await ledger.sign_and_submit_request(pool_handle, wallet_handle, _did, schema_request)
 
+
+async def get_schema(pool_handle, _did, schema_id):
+    get_schema_request = await ledger.build_get_schema_request(_did, schema_id)
+    get_schema_response = await ledger.submit_request(pool_handle, get_schema_request)
+    return await ledger.parse_get_schema_response(get_schema_response)
 
 async def auth_decrypt(wallet_handle, key, message):
     from_verkey, decrypted_message_json = await crypto.auth_decrypt(wallet_handle, key, message)

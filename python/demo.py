@@ -69,6 +69,15 @@ async def run():
 
 
     logger.info("==========================================================================")
+    logger.info("== Getting Trust Anchor credentials - Government getting Verinym ==")
+    logger.info("**************************************************************************")
+
+    government_did = await get_verinym(pool_handle, "Bd Steward", steward_wallet, steward_did,
+                                       steward_government_key, "Government", government_wallet, government_steward_did,
+                                       government_steward_key, 'TRUST_ANCHOR')
+
+    logger.info("==========================================================================")
+
 
 
 async def onboarding(pool_handle, _from, from_wallet, from_did, to, to_wallet: Optional[str], to_wallet_config: str,
@@ -160,7 +169,7 @@ async def send_nym(pool_handle, wallet_handle, _did, new_did, new_key, role):
 
 
 async def auth_decrypt(wallet_handle, key, message):
-    from_verkey, decrypted_message_json = await crypto.anon_decrypt(wallet_handle, key, message)
+    from_verkey, decrypted_message_json = await crypto.auth_decrypt(wallet_handle, key, message)
     decrypted_message_json = decrypted_message_json.decode("utf-8")
     decrypted_message = json.loads(decrypted_message_json)
     return from_verkey, decrypted_message_json, decrypted_message

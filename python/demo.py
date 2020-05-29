@@ -77,7 +77,24 @@ async def run():
                                        government_steward_key, 'TRUST_ANCHOR')
 
     logger.info("==========================================================================")
+    logger.info("== Getting Trust Anchor credentials - CUET Onboarding ==")
+    logger.info("**************************************************************************")
 
+    cuet_wallet_config = json.dumps({"id": "cuet_wallet"})
+    cuet_wallet_credentials = json.dumps({"key": "cuet_wallet_key"})
+    cuet_wallet, steward_cuet_key, cuet_steward_did, cuet_steward_key, _ = \
+        await onboarding(pool_handle, "Bd Steward", steward_wallet, steward_did, "Cuet", None, cuet_wallet_config,
+                         cuet_wallet_credentials)
+
+    logger.info("==========================================================================")
+    logger.info("== Getting Trust Anchor credentials - CUET getting Verinym ==")
+    logger.info("**************************************************************************")
+
+
+    cuet_did = await get_verinym(pool_handle, "Bd Steward", steward_wallet, steward_did, steward_cuet_key,
+                                  "Cuet", cuet_wallet, cuet_steward_did, cuet_steward_key, 'TRUST_ANCHOR')
+
+    logger.info("==========================================================================")
 
 
 async def onboarding(pool_handle, _from, from_wallet, from_did, to, to_wallet: Optional[str], to_wallet_config: str,

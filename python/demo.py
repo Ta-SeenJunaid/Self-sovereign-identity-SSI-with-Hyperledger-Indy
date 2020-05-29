@@ -221,6 +221,11 @@ async def send_nym(pool_handle, wallet_handle, _did, new_did, new_key, role):
     await ledger.sign_and_submit_request(pool_handle, wallet_handle, _did, nym_request)
 
 
+async def send_schema(pool_handle, wallet_handle, _did, schema):
+    schema_request = await ledger.build_schema_request(_did, schema)
+    await ledger.sign_and_submit_request(pool_handle, wallet_handle, _did, schema_request)
+
+
 async def auth_decrypt(wallet_handle, key, message):
     from_verkey, decrypted_message_json = await crypto.auth_decrypt(wallet_handle, key, message)
     decrypted_message_json = decrypted_message_json.decode("utf-8")

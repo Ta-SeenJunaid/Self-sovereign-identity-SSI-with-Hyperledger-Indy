@@ -131,6 +131,23 @@ async def run():
 
 
     logger.info("==========================================================================")
+    logger.info("== Credential Schemas Setup ==")
+    logger.info("**************************************************************************")
+
+    logger.info("\"Government\" -> Create \"Job-Certificate\" Schema")
+    job_certificate = {
+        'name': 'Job-Certificate',
+        'version': '0.0.1',
+        'attributes': ['first_name', 'last_name', 'salary', 'employee_status', 'experience']
+    }
+    (job_certificate_schema_id, job_certificate_schema) = \
+        await anoncreds.issuer_create_schema(government_did, job_certificate['name'], job_certificate['version'],
+                                             json.dumps(job_certificate['attributes']))
+
+    logger.info("\"Government\" -> Send \"Job-Certificate\" Schema to Ledger")
+    await send_schema(pool_handle, government_wallet, government_did, job_certificate_schema)
+    logger.info("==========================================================================")
+
 
 
 async def onboarding(pool_handle, _from, from_wallet, from_did, to, to_wallet: Optional[str], to_wallet_config: str,

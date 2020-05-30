@@ -1,3 +1,6 @@
+#!/bin/bash
+
+
 if [ "$#" -eq 0 ];
     then
         if [[ "$(docker ps -a -f status=running | grep indy_pool)" ]];

@@ -1,3 +1,5 @@
+#!/bin/bash
+
 #Stop and remove all running Indy containers
 echo "Remove all of these following images and your .indy_client?"
   docker ps -a | grep '\indy_dev_pool\|indy_dev' # | '{print $1}'

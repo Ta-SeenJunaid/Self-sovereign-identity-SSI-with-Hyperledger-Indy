@@ -186,7 +186,32 @@ async def run():
     logger.info("\"CUET\" -> Send  \"CUET Transcript\" Credential Definition to Ledger")
     await send_cred_def(pool_handle, cuet_wallet, cuet_did, cuet_transcript_cred_def_json)
 
+
     logger.info("==========================================================================")
+    logger.info("== BJIT Credential Definition Setup ==")
+    logger.info("**************************************************************************")
+
+    logger.info("\"BJIT\" -> Get from Ledger \"Job-Certificate\" Schema")
+    (_, job_certificate_schema) = await get_schema(pool_handle, bjit_did, job_certificate_schema_id)
+
+    logger.info("\"BJIT\" -> Create and store in Wallet \"BJIT Job-Certificate\" Credential Definition")
+
+    job_certificate_cred_def = {
+        'tag': 'TAG1',
+        'type': 'CL',
+        'config': {"support_revocation": False}
+    }
+
+    (bjit_job_certificate_cred_def_id, bjit_job_certificate_cred_def_json) = \
+        await anoncreds.issuer_create_and_store_credential_def(bjit_wallet, bjit_did, job_certificate_schema,
+                                                               job_certificate_cred_def['tag'], job_certificate_cred_def['type'],
+                                                               json.dumps(job_certificate_cred_def['config']))
+
+    logger.info("\"BJIT\" -> Send \"BJIT Job-Certificate\" Credential Definition to Ledger")
+    await send_cred_def(pool_handle, bjit_wallet, bjit_did, bjit_job_certificate_cred_def_json)
+
+    logger.info("==========================================================================")
+
 
 
 async def send_cred_def(pool_handle,wallet_handle, _did, cred_def_json):

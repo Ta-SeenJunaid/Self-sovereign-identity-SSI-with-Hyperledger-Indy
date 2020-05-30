@@ -292,6 +292,7 @@ async def get_schema(pool_handle, _did, schema_id):
     get_schema_response = await ledger.submit_request(pool_handle, get_schema_request)
     return await ledger.parse_get_schema_response(get_schema_response)
 
+
 async def auth_decrypt(wallet_handle, key, message):
     from_verkey, decrypted_message_json = await crypto.auth_decrypt(wallet_handle, key, message)
     decrypted_message_json = decrypted_message_json.decode("utf-8")

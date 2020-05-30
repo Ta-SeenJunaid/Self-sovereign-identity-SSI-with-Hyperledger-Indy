@@ -1,7 +1,6 @@
 import asyncio
 from os import environ
 from pathlib import Path
-from tempfile import gettempdir
 
 PROTOCOL_VERSION = 2
 

@@ -163,7 +163,9 @@ async def run():
 
     time.sleep(1)
 
-
+async def send_cred_def(pool_handle,wallet_handle, _did, cred_def_json):
+    cred_def_request = await ledger.build_cred_def_request(_did, cred_def_json)
+    await ledger.sign_and_submit_request(pool_handle, wallet_handle, _did, cred_def_request)
 
 
 async def onboarding(pool_handle, _from, from_wallet, from_did, to, to_wallet: Optional[str], to_wallet_config: str,

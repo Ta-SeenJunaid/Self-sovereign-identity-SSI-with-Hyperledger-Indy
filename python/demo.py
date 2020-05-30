@@ -163,6 +163,32 @@ async def run():
 
     time.sleep(1)
 
+    logger.info("==========================================================================")
+    logger.info("== CUET Credential Definition Setup ==")
+    logger.info("**************************************************************************")
+
+    logger.info("\"CUET\" -> Get \"Transcript\" Schema from Ledger")
+    (_, transcript_schema) = await get_schema(pool_handle, cuet_did, transcript_schema_id)
+
+    logger.info("\"CUET\" -> Create and store in Wallet \"CUET Transcript\" Credential Definition")
+
+    transcript_cred_def = {
+        'tag': 'TAG1',
+        'type': 'CL',
+        'config': {"support_revocation": False}
+    }
+
+    (cuet_transcript_cred_def_id, cuet_transcript_cred_def_json) = \
+        await anoncreds.issuer_create_and_store_credential_def(cuet_wallet, cuet_did, transcript_schema,
+                                                               transcript_cred_def['tag'], transcript_cred_def['type'],
+                                                               json.dumps(transcript_cred_def['config']))
+
+    logger.info("\"CUET\" -> Send  \"CUET Transcript\" Credential Definition to Ledger")
+    await send_cred_def(pool_handle, cuet_wallet, cuet_did, cuet_transcript_cred_def_json)
+
+    logger.info("==========================================================================")
+
+
 async def send_cred_def(pool_handle,wallet_handle, _did, cred_def_json):
     cred_def_request = await ledger.build_cred_def_request(_did, cred_def_json)
     await ledger.sign_and_submit_request(pool_handle, wallet_handle, _did, cred_def_request)

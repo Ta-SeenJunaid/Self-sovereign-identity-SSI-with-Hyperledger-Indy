@@ -3,6 +3,14 @@ import argparse
 import sys
 from ctypes import *
 
+from src.utils import get_pool_genesis_txn_path, PROTOCOL_VERSION
+
+import json
+
+from indy import pool
+
+from indy.error import ErrorCode
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
@@ -40,3 +48,23 @@ if args.storage_type:
             print("Error initializing storage, ignoring ...", e)
 
     print("Success, loaded wallet storage", args.storage_type)
+
+
+async def run():
+    logger.info("App -> started")
+
+    pool_ = {
+        'name': 'pool1'
+    }
+    logger.info("Open Pool Ledger: {}".format(pool_['name']))
+    pool_['genesis_txn_path'] = get_pool_genesis_txn_path(pool_['name'])
+    pool_['config'] = json.dumps({"genesis_txn": str(pool_['genesis_txn_path'])})
+
+    await pool.set_protocol_version(PROTOCOL_VERSION)
+
+    try:
+        await pool.create_pool_ledger_config(pool_['name'], pool_['config'])
+    except IndexError as ex:
+        if ex.error_code == ErrorCode.PoolLedgerConfigAlreadyExistsError:
+            pass
+    pool_['handle'] = await  pool.open_pool_ledger(pool_['name'], None)

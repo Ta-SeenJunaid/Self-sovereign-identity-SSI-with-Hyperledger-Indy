@@ -7,7 +7,7 @@ from src.utils import get_pool_genesis_txn_path, PROTOCOL_VERSION
 
 import json
 
-from indy import pool, wallet
+from indy import pool, wallet, did, ledger
 
 from indy.error import ErrorCode, IndyError
 
@@ -67,7 +67,10 @@ async def run():
     except IndexError as ex:
         if ex.error_code == ErrorCode.PoolLedgerConfigAlreadyExistsError:
             pass
+
     pool_['handle'] = await  pool.open_pool_ledger(pool_['name'], None)
+
+
 
 
 
@@ -104,3 +107,22 @@ async def create_wallet(identity):
     identity['wallet'] = await wallet.open_wallet(wallet_config("open", identity['wallet_config']),
                                                   wallet_credentials("open", identity['wallet_credentials']))
 
+
+async def getting_verinym(from_, to):
+    await create_wallet(to)
+
+    (to['did'], to['key']) = await did.create_and_store_my_did(to['wallet'], "{}")
+
+    from_['info'] = {
+        'did': to['did'],
+        'verkey': to['key'],
+        'role': to['role'] or None
+    }
+
+    await send_nym(from_['pool'], from_['wallet'], from_['did'], from_['info']['did'],
+                   from_['info']['verkey'], from_['info']['role'])
+
+
+async def send_nym(pool_handle, wallet_handle, _did, new_did, new_key, role):
+    nym_request = await ledger.build_nym_request(_did, new_did, new_key, None, role)
+    await ledger.sign_and_submit_request(pool_handle, wallet_handle, _did, nym_request)

@@ -7,9 +7,9 @@ from src.utils import get_pool_genesis_txn_path, PROTOCOL_VERSION
 
 import json
 
-from indy import pool
+from indy import pool, wallet
 
-from indy.error import ErrorCode
+from indy.error import ErrorCode, IndyError
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -68,3 +68,39 @@ async def run():
         if ex.error_code == ErrorCode.PoolLedgerConfigAlreadyExistsError:
             pass
     pool_['handle'] = await  pool.open_pool_ledger(pool_['name'], None)
+
+
+
+
+def wallet_config(operation, wallet_config_str):
+    if not args.storage_type:
+        return wallet_config_str
+    wallet_config_json = json.loads(wallet_config_str)
+    wallet_config_json['storage_type'] = args.storage_type
+    if args.config:
+        wallet_config_json['storage_config'] = json.loads(args.config)
+    # print(operation, json.dumps(wallet_config_json))
+    return json.dumps(wallet_config_json)
+
+
+def wallet_credentials(operation, wallet_credentials_str):
+    if not args.storage_type:
+        return wallet_credentials_str
+    wallet_credentials_json = json.loads(wallet_credentials_str)
+    if args.creds:
+        wallet_credentials_json['storage_credentials'] = json.loads(args.creds)
+    # print(operation, json.dumps(wallet_credentials_json))
+    return json.dumps(wallet_credentials_json)
+
+
+async def create_wallet(identity):
+    logger.info("\"{}\" -> Create wallet".format(identity['name']))
+    try:
+        await wallet.create_wallet(wallet_config("create", identity['wallet_config']),
+                                   wallet_credentials("create", identity['wallet_credentials']))
+    except IndyError as ex:
+        if ex.error_code == ErrorCode.PoolLedgerConfigAlreadyExistsError:
+            pass
+    identity['wallet'] = await wallet.open_wallet(wallet_config("open", identity['wallet_config']),
+                                                  wallet_credentials("open", identity['wallet_credentials']))
+

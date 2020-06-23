@@ -3,13 +3,15 @@ import argparse
 import sys
 from ctypes import *
 
-from src.utils import get_pool_genesis_txn_path, PROTOCOL_VERSION
+from src.utils import get_pool_genesis_txn_path, PROTOCOL_VERSION, run_coroutine
 
 import json
 
 from indy import pool, wallet, did, ledger
 
 from indy.error import ErrorCode, IndyError
+
+import time
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -70,6 +72,116 @@ async def run():
 
     pool_['handle'] = await  pool.open_pool_ledger(pool_['name'], None)
 
+    logger.info("==============================")
+    logger.info("=== Getting Trust Anchor credentials for CUET, BJIT, City and Government  ==")
+    logger.info("------------------------------")
+
+    steward = {
+        'name': "Bd Steward",
+        'wallet_config': json.dumps({'id': 'bd_steward_wallet'}),
+        'wallet_credentials': json.dumps({'key': 'steward_wallet_key'}),
+        'pool': pool_['handle'],
+        'seed': '000000000000000000000000Steward1'
+    }
+
+    await create_wallet(steward)
+
+    logger.info("\"Bd Steward\" -> Create and store in Wallet DID from seed")
+    steward['did_info'] = json.dumps({'seed': steward['seed']})
+    steward['did'], steward['key'] = await did.create_and_store_my_did(steward['wallet'], steward['did_info'])
+
+    logger.info("==============================")
+    logger.info("== Getting Trust Anchor credentials - Government getting Verinym  ==")
+    logger.info("------------------------------")
+
+    government = {
+        'name': 'Government',
+        'wallet_config': json.dumps({'id': 'government_wallet'}),
+        'wallet_credentials': json.dumps({'key': 'government_wallet_key'}),
+        'pool': pool_['handle'],
+        'role': 'TRUST_ANCHOR'
+    }
+
+    await getting_verinym(steward, government)
+
+    logger.info("==============================")
+    logger.info("== Getting Trust Anchor credentials - CUET getting Verinym  ==")
+    logger.info("------------------------------")
+
+    cuet = {
+        'name': 'Cuet',
+        'wallet_config': json.dumps({'id': 'cuet_wallet'}),
+        'wallet_credentials': json.dumps({'key': 'cuet_wallet_key'}),
+        'pool': pool_['handle'],
+        'role': 'TRUST_ANCHOR'
+    }
+
+    await getting_verinym(steward, cuet)
+
+    logger.info("==============================")
+    logger.info("== Getting Trust Anchor credentials - BJIT getting Verinym  ==")
+    logger.info("------------------------------")
+
+    bjit = {
+        'name': 'Bjit',
+        'wallet_config': json.dumps({'id': 'bjit_wallet'}),
+        'wallet_credentials': json.dumps({'key': 'bjit_wallet_key'}),
+        'pool': pool_['handle'],
+        'role': 'TRUST_ANCHOR'
+    }
+
+    await getting_verinym(steward, bjit)
+
+    logger.info("==============================")
+    logger.info("== Getting Trust Anchor credentials - City getting Verinym  ==")
+    logger.info("------------------------------")
+
+    city = {
+        'name': 'City',
+        'wallet_config': json.dumps({'id': 'city_wallet'}),
+        'wallet_credentials': json.dumps({'key': 'city_wallet_key'}),
+        'pool': pool_['handle'],
+        'role': 'TRUST_ANCHOR'
+    }
+
+    await getting_verinym(steward, city)
+
+    logger.info("==============================")
+
+    logger.info(" \"Bd Steward\" -> Close and Delete wallet")
+    await wallet.close_wallet(steward['wallet'])
+    await wallet.delete_wallet(steward['wallet_config'], steward['wallet_credentials'])
+
+    logger.info("\"Government\" -> Close and Delete wallet")
+    await wallet.close_wallet(government['wallet'])
+    await wallet.delete_wallet(wallet_config("delete", government['wallet_config']),
+                               wallet_credentials("delete", government['wallet_credentials']))
+
+    logger.info("\"CUET\" -> Close and Delete wallet")
+    await wallet.close_wallet(cuet['wallet'])
+    await wallet.delete_wallet(wallet_config("delete", cuet['wallet_config']),
+                               wallet_credentials("delete", cuet['wallet_credentials']))
+
+    logger.info("\"BJIT\" -> Close and Delete wallet")
+    await wallet.close_wallet(bjit['wallet'])
+    await wallet.delete_wallet(wallet_config("delete", bjit['wallet_config']),
+                               wallet_credentials("delete", bjit['wallet_credentials']))
+
+    logger.info("\"City\" -> Close and Delete wallet")
+    await wallet.close_wallet(city['wallet'])
+    await wallet.delete_wallet(wallet_config("delete", city['wallet_config']),
+                               wallet_credentials("delete", city['wallet_credentials']))
+
+
+    logger.info("Close and Delete pool")
+    await pool.close_pool_ledger(pool_['handle'])
+    await pool.delete_pool_ledger_config(pool_['name'])
+
+    logger.info("App -> demo done")
+
+
+
+
 
 
 
@@ -126,3 +238,8 @@ async def getting_verinym(from_, to):
 async def send_nym(pool_handle, wallet_handle, _did, new_did, new_key, role):
     nym_request = await ledger.build_nym_request(_did, new_did, new_key, None, role)
     await ledger.sign_and_submit_request(pool_handle, wallet_handle, _did, nym_request)
+
+
+if __name__ == '__main__':
+    run_coroutine(run)
+    time.sleep(1)

@@ -7,7 +7,7 @@ from src.utils import get_pool_genesis_txn_path, PROTOCOL_VERSION, run_coroutine
 
 import json
 
-from indy import pool, wallet, did, ledger
+from indy import pool, wallet, did, ledger, anoncreds
 
 from indy.error import ErrorCode, IndyError
 
@@ -147,6 +147,41 @@ async def run():
     await getting_verinym(steward, city)
 
     logger.info("==============================")
+    logger.info("=== Credential Schemas Setup ==")
+    logger.info("------------------------------")
+
+    logger.info("\"Government\" -> Create \"Job-Certificate\" Schema")
+    job_certificate = {
+        'name': 'Job-Certificate',
+        'version': '0.2',
+        'attributes': ['first_name', 'last_name', 'salary', 'employee_status', 'experience']
+    }
+    (government['job_certificate_schema_id'], government['job_certificate_schema']) = \
+        await anoncreds.issuer_create_schema(government['did'], job_certificate['name'], job_certificate['version'],
+                                             json.dumps(job_certificate['attributes']))
+    job_certificate_schema_id = government['job_certificate_schema_id']
+
+    logger.info("\"Government\" -> Send \"Job-Certificate\" Schema to Ledger")
+    await send_schema(government['pool'], government['wallet'], government['did'], government['job_certificate_schema'])
+
+    logger.info("\"Government\" -> Create \"Transcript\" Schema")
+    transcript = {
+        'name': 'Transcript',
+        'version': '1.2',
+        'attributes': ['first_name', 'last_name', 'degree', 'status', 'year', 'average', 'ssn']
+    }
+    (government['transcript_schema_id'], government['transcript_schema']) = \
+        await anoncreds.issuer_create_schema(government['did'], transcript['name'], transcript['version'],
+                                             json.dumps(transcript['attributes']))
+    transcript_schema_id = government['transcript_schema_id']
+
+    logger.info("\"Government\" -> Send \"Transcript\" Schema to Ledger")
+    await send_schema(government['pool'], government['wallet'], government['did'], government['transcript_schema'])
+
+    time.sleep(1)  # sleep 1 second before getting schema # sleep 1 second before getting schema
+
+
+    logger.info("==============================")
 
     logger.info(" \"Bd Steward\" -> Close and Delete wallet")
     await wallet.close_wallet(steward['wallet'])
@@ -239,6 +274,9 @@ async def send_nym(pool_handle, wallet_handle, _did, new_did, new_key, role):
     nym_request = await ledger.build_nym_request(_did, new_did, new_key, None, role)
     await ledger.sign_and_submit_request(pool_handle, wallet_handle, _did, nym_request)
 
+async def send_schema(pool_handle, wallet_handle, _did, schema):
+    schema_request = await ledger.build_schema_request(_did, schema)
+    await ledger.sign_and_submit_request(pool_handle, wallet_handle, _did, schema_request)
 
 if __name__ == '__main__':
     run_coroutine(run)

@@ -3,7 +3,7 @@ import argparse
 import sys
 from ctypes import *
 
-from src.utils import get_pool_genesis_txn_path, PROTOCOL_VERSION, run_coroutine
+from src.utils import get_pool_genesis_txn_path, PROTOCOL_VERSION, run_coroutine, ensure_previous_request_applied
 
 import json
 
@@ -180,6 +180,31 @@ async def run():
 
     time.sleep(1)  # sleep 1 second before getting schema # sleep 1 second before getting schema
 
+    logger.info("==============================")
+    logger.info("=== CUET Credential Definition Setup ==")
+    logger.info("------------------------------")
+
+    logger.info("\"CUET\" -> Get \"Transcript\" Schema from Ledger")
+    (cuet['transcript_schema_id'], cuet['transcript_schema']) = \
+        await get_schema(cuet['pool'], cuet['did'], transcript_schema_id)
+
+    logger.info("\"CUET\" -> Create and store in Wallet \"CUET Transcript\" Credential Definition")
+    transcript_cred_def = {
+        'tag': 'TAG1',
+        'type': 'CL',
+        'config': {"support_revocation": False}
+    }
+    (cuet['transcript_cred_def_id'], cuet['transcript_cred_def']) = \
+        await anoncreds.issuer_create_and_store_credential_def(cuet['wallet'], cuet['did'],
+                                                               cuet['transcript_schema'], transcript_cred_def['tag'],
+                                                               transcript_cred_def['type'],
+                                                               json.dumps(transcript_cred_def['config']))
+
+
+
+
+
+
 
     logger.info("==============================")
 
@@ -277,6 +302,12 @@ async def send_nym(pool_handle, wallet_handle, _did, new_did, new_key, role):
 async def send_schema(pool_handle, wallet_handle, _did, schema):
     schema_request = await ledger.build_schema_request(_did, schema)
     await ledger.sign_and_submit_request(pool_handle, wallet_handle, _did, schema_request)
+
+async def get_schema(pool_handle, _did, schema_id):
+    get_schema_request = await ledger.build_get_schema_request(_did, schema_id)
+    get_schema_response = await ensure_previous_request_applied(
+        pool_handle, get_schema_request, lambda response: response['result']['data'] is not None)
+    return await ledger.parse_get_schema_response(get_schema_response)
 
 if __name__ == '__main__':
     run_coroutine(run)

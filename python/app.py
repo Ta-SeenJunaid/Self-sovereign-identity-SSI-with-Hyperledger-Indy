@@ -7,7 +7,7 @@ from src.utils import get_pool_genesis_txn_path, PROTOCOL_VERSION, run_coroutine
 
 import json
 
-from indy import pool, wallet, did, ledger, anoncreds
+from indy import pool, wallet, did, ledger, anoncreds, blob_storage
 
 from indy.error import ErrorCode, IndyError
 
@@ -200,6 +200,33 @@ async def run():
                                                                transcript_cred_def['type'],
                                                                json.dumps(transcript_cred_def['config']))
 
+    logger.info("\"CUET\" -> Send  \"CUET Transcript\" Credential Definition to Ledger")
+    await send_cred_def(cuet['pool'], cuet['wallet'], cuet['did'], cuet['transcript_cred_def'])
+
+    logger.info("==============================")
+    logger.info("=== BJIT Credential Definition Setup ==")
+    logger.info("------------------------------")
+
+    logger.info("\"BJIT\" -> Get from Ledger \"Job-Certificate\" Schema")
+    (bjit['job_certificate_schema_id'], bjit['job_certificate_schema']) = \
+        await get_schema(bjit['pool'], bjit['did'], job_certificate_schema_id)
+
+    logger.info("\"BJIT\" -> Create and store in Wallet \"BJIT Job-Certificate\" Credential Definition")
+    job_certificate_cred_def = {
+        'tag': 'TAG1',
+        'type': 'CL',
+        'config': {"support_revocation": True}
+    }
+    (bjit['job_certificate_cred_def_id'], bjit['job_certificate_cred_def']) = \
+        await anoncreds.issuer_create_and_store_credential_def(bjit['wallet'], bjit['did'],
+                                                               bjit['job_certificate_schema'],
+                                                               job_certificate_cred_def['tag'],
+                                                               job_certificate_cred_def['type'],
+                                                               json.dumps(job_certificate_cred_def['config']))
+
+    logger.info("\"BJIT\" -> Send \"BJIT Job-Certificate\" Credential Definition to Ledger")
+    await send_cred_def(bjit['pool'], bjit['wallet'], bjit['did'], bjit['job_certificate_cred_def'])
+
 
 
 
@@ -308,6 +335,10 @@ async def get_schema(pool_handle, _did, schema_id):
     get_schema_response = await ensure_previous_request_applied(
         pool_handle, get_schema_request, lambda response: response['result']['data'] is not None)
     return await ledger.parse_get_schema_response(get_schema_response)
+
+async def send_cred_def(pool_handle, wallet_handle, _did, cred_def_json):
+    cred_def_request = await ledger.build_cred_def_request(_did, cred_def_json)
+    await ledger.sign_and_submit_request(pool_handle, wallet_handle, _did, cred_def_request)
 
 if __name__ == '__main__':
     run_coroutine(run)

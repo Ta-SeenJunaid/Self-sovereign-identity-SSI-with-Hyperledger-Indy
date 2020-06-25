@@ -264,6 +264,26 @@ async def run():
     (emon['did'], emon['key']) = await did.create_and_store_my_did(emon['wallet'], "{}")
 
 
+    logger.info("==============================")
+    logger.info("== Getting Transcript with CUET - Getting Transcript Credential ==")
+    logger.info("------------------------------")
+
+    logger.info("\"CUET\" -> Create \"Transcript\" Credential Offer for Emon")
+    cuet['transcript_cred_offer'] = \
+        await anoncreds.issuer_create_credential_offer(cuet['wallet'], cuet['transcript_cred_def_id'])
+
+    logger.info("\"CUET\" -> Send \"Transcript\" Credential Offer to Emon")
+    emon['transcript_cred_offer'] = cuet['transcript_cred_offer']
+    transcript_cred_offer_object = json.loads(emon['transcript_cred_offer'])
+
+    emon['transcript_schema_id'] = transcript_cred_offer_object['schema_id']
+    emon['transcript_cred_def_id'] = transcript_cred_offer_object['cred_def_id']
+
+    logger.info("\"Emon\" -> Create and store \"Emon\" Master Secret in Wallet")
+    emon['master_secret_id'] = await anoncreds.prover_create_master_secret(emon['wallet'], None)
+
+
+
 
 
 

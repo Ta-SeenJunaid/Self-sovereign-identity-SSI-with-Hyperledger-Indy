@@ -227,6 +227,28 @@ async def run():
     logger.info("\"BJIT\" -> Send \"BJIT Job-Certificate\" Credential Definition to Ledger")
     await send_cred_def(bjit['pool'], bjit['wallet'], bjit['did'], bjit['job_certificate_cred_def'])
 
+    logger.info("\"BJIT\" -> Creates Revocation Registry")
+    bjit['tails_writer_config'] = json.dumps({'base_dir': "/tmp/indy_bjit_tails", 'uri_pattern': ''})
+    tails_writer = await blob_storage.open_writer('default', bjit['tails_writer_config'])
+    (bjit['revoc_reg_id'], bjit['revoc_reg_def'], bjit['revoc_reg_entry']) = \
+        await anoncreds.issuer_create_and_store_revoc_reg(bjit['wallet'], bjit['did'], 'CL_ACCUM', 'TAG1',
+                                                          bjit['job_certificate_cred_def_id'],
+                                                          json.dumps({'max_cred_num': 5,
+                                                                      'issuance_type': 'ISSUANCE_ON_DEMAND'}),
+                                                          tails_writer)
+
+    logger.info("\"BJIT\" -> Post Revocation Registry Definition to Ledger")
+    bjit['revoc_reg_def_request'] = await ledger.build_revoc_reg_def_request(bjit['did'], bjit['revoc_reg_def'])
+    await ledger.sign_and_submit_request(bjit['pool'], bjit['wallet'], bjit['did'], bjit['revoc_reg_def_request'])
+
+    logger.info("\"BJIT\" -> Post Revocation Registry Entry to Ledger")
+    bjit['revoc_reg_entry_request'] = \
+        await ledger.build_revoc_reg_entry_request(bjit['did'], bjit['revoc_reg_id'], 'CL_ACCUM',
+                                                   bjit['revoc_reg_entry'])
+    await ledger.sign_and_submit_request(bjit['pool'], bjit['wallet'], bjit['did'], bjit['revoc_reg_entry_request'])
+
+
+
 
 
 

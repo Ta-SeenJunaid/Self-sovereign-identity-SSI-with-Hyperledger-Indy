@@ -248,6 +248,21 @@ async def run():
     await ledger.sign_and_submit_request(bjit['pool'], bjit['wallet'], bjit['did'], bjit['revoc_reg_entry_request'])
 
 
+    logger.info("==============================")
+    logger.info("=== Getting Transcript with CUET ==")
+    logger.info("==============================")
+    logger.info("== Emon setup ==")
+    logger.info("------------------------------")
+
+    emon = {
+        'name': 'Emon',
+        'wallet_config': json.dumps({'id': 'emon_wallet'}),
+        'wallet_credentials': json.dumps({'key': 'emon_wallet_key'}),
+        'pool': pool_['handle'],
+    }
+    await create_wallet(emon)
+    (emon['did'], emon['key']) = await did.create_and_store_my_did(emon['wallet'], "{}")
+
 
 
 

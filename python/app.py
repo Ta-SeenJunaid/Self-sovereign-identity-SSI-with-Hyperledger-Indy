@@ -282,6 +282,19 @@ async def run():
     logger.info("\"Emon\" -> Create and store \"Emon\" Master Secret in Wallet")
     emon['master_secret_id'] = await anoncreds.prover_create_master_secret(emon['wallet'], None)
 
+    logger.info("\"Emon\" -> Get \"CUET Transcript\" Credential Definition from Ledger")
+    (emon['cuet_transcript_cred_def_id'], emon['cuet_transcript_cred_def']) = \
+        await get_cred_def(emon['pool'], emon['did'], emon['transcript_cred_def_id'])
+
+    logger.info("\"Emon\" -> Create \"Transcript\" Credential Request for CUET")
+    (emon['transcript_cred_request'], emon['transcript_cred_request_metadata']) = \
+        await anoncreds.prover_create_credential_req(emon['wallet'], emon['did'],
+                                                     emon['transcript_cred_offer'], emon['cuet_transcript_cred_def'],
+                                                     emon['master_secret_id'])
+
+    logger.info("\"Emon\" -> Send \"Transcript\" Credential Request to CUET")
+    cuet['transcript_cred_request'] = emon['transcript_cred_request']
+
 
 
 
@@ -396,6 +409,13 @@ async def get_schema(pool_handle, _did, schema_id):
 async def send_cred_def(pool_handle, wallet_handle, _did, cred_def_json):
     cred_def_request = await ledger.build_cred_def_request(_did, cred_def_json)
     await ledger.sign_and_submit_request(pool_handle, wallet_handle, _did, cred_def_request)
+
+async def get_cred_def(pool_handle, _did, cred_def_id):
+    get_cred_def_request = await ledger.build_get_cred_def_request(_did, cred_def_id)
+    get_cred_def_response = \
+        await ensure_previous_request_applied(pool_handle, get_cred_def_request,
+                                              lambda response: response['result']['data'] is not None)
+    return await ledger.parse_get_cred_def_response(get_cred_def_response)
 
 if __name__ == '__main__':
     run_coroutine(run)

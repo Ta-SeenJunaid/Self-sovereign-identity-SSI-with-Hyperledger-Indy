@@ -297,6 +297,31 @@ async def run():
 
 
 
+    logger.info("\"CUET\" -> Create \"Transcript\" Credential for Emon")
+    cuet['emon_transcript_cred_values'] = json.dumps({
+        "first_name": {"raw": "Emon", "encoded": "1139481716457488690172217916278103335"},
+        "last_name": {"raw": "Sagor", "encoded": "5321642780241790123587902456789123452"},
+        "degree": {"raw": "Bachelor of Science, Computer Science", "encoded": "12434523576212321"},
+        "status": {"raw": "graduated", "encoded": "2213454313412354"},
+        "ssn": {"raw": "123-45-6789", "encoded": "3124141231422543541"},
+        "year": {"raw": "2018", "encoded": "2018"},
+        "average": {"raw": "4", "encoded": "4"}
+    })
+
+    cuet['transcript_cred'], _, _ = \
+        await anoncreds.issuer_create_credential(cuet['wallet'], cuet['transcript_cred_offer'],
+                                                 cuet['transcript_cred_request'],
+                                                 cuet['emon_transcript_cred_values'], None, None)
+
+    logger.info("\"CUET\" -> Send \"Transcript\" Credential to Emon")
+    emon['transcript_cred'] = cuet['transcript_cred']
+
+    logger.info("\"Emon\" -> Store \"Transcript\" Credential from CUET")
+    _, emon['transcript_cred_def'] = await get_cred_def(emon['pool'], emon['did'],
+                                                         emon['transcript_cred_def_id'])
+
+    await anoncreds.prover_store_credential(emon['wallet'], None, emon['transcript_cred_request_metadata'],
+                                            emon['transcript_cred'], emon['transcript_cred_def'], None)
 
 
 

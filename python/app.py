@@ -324,6 +324,49 @@ async def run():
                                             emon['transcript_cred'], emon['transcript_cred_def'], None)
 
 
+    logger.info("==============================")
+    logger.info("== Apply for the job with BJIT - Transcript proving ==")
+    logger.info("------------------------------")
+
+    logger.info("\"BJIT\" -> Create \"Job-Application\" Proof Request")
+    nonce = await anoncreds.generate_nonce()
+    bjit['job_application_proof_request'] = json.dumps({
+        'nonce': nonce,
+        'name': 'Job-Application',
+        'version': '0.1',
+        'requested_attributes': {
+            'attr1_referent': {
+                'name': 'first_name'
+            },
+            'attr2_referent': {
+                'name': 'last_name'
+            },
+            'attr3_referent': {
+                'name': 'degree',
+                'restrictions': [{'cred_def_id': cuet['transcript_cred_def_id']}]
+            },
+            'attr4_referent': {
+                'name': 'status',
+                'restrictions': [{'cred_def_id': cuet['transcript_cred_def_id']}]
+            },
+            'attr5_referent': {
+                'name': 'ssn',
+                'restrictions': [{'cred_def_id': cuet['transcript_cred_def_id']}]
+            },
+            'attr6_referent': {
+                'name': 'phone_number'
+            }
+        },
+        'requested_predicates': {
+            'predicate1_referent': {
+                'name': 'average',
+                'p_type': '>=',
+                'p_value': 3,
+                'restrictions': [{'cred_def_id': cuet['transcript_cred_def_id']}]
+            }
+        }
+    })
+
 
 
 

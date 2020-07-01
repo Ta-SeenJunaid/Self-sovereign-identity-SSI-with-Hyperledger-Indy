@@ -522,6 +522,54 @@ async def get_credential_for_referent(search_handle, referent):
         await anoncreds.prover_fetch_credentials_for_proof_req(search_handle, referent, 10))
     return credentials[0]['cred_info']
 
+async def prover_get_entities_from_ledger(pool_handle, _did, identifiers, actor, timestamp_from=None,
+                                          timestamp_to=None):
+    schemas = {}
+    cred_defs = {}
+    rev_states = {}
+    for item in identifiers.values():
+        logger.info("\"{}\" -> Get Schema from Ledger".format(actor))
+        (received_schema_id, received_schema) = await get_schema(pool_handle, _did, item['schema_id'])
+        schemas[received_schema_id] = json.loads(received_schema)
+
+        logger.info("\"{}\" -> Get Claim Definition from Ledger".format(actor))
+        (received_cred_def_id, received_cred_def) = await get_cred_def(pool_handle, _did, item['cred_def_id'])
+        cred_defs[received_cred_def_id] = json.loads(received_cred_def)
+
+        if 'rev_reg_id' in item and item['rev_reg_id'] is not None:
+            # Create Revocations States
+            logger.info("\"{}\" -> Get Revocation Registry Definition from Ledger".format(actor))
+            get_revoc_reg_def_request = await ledger.build_get_revoc_reg_def_request(_did, item['rev_reg_id'])
+
+            get_revoc_reg_def_response = \
+                await ensure_previous_request_applied(pool_handle, get_revoc_reg_def_request,
+                                                      lambda response: response['result']['data'] is not None)
+            (rev_reg_id, revoc_reg_def_json) = await ledger.parse_get_revoc_reg_def_response(get_revoc_reg_def_response)
+
+            logger.info("\"{}\" -> Get Revocation Registry Delta from Ledger".format(actor))
+            if not timestamp_to: timestamp_to = int(time.time())
+            get_revoc_reg_delta_request = \
+                await ledger.build_get_revoc_reg_delta_request(_did, item['rev_reg_id'], timestamp_from, timestamp_to)
+            get_revoc_reg_delta_response = \
+                await ensure_previous_request_applied(pool_handle, get_revoc_reg_delta_request,
+                                                      lambda response: response['result']['data'] is not None)
+            (rev_reg_id, revoc_reg_delta_json, t) = \
+                await ledger.parse_get_revoc_reg_delta_response(get_revoc_reg_delta_response)
+
+            tails_reader_config = json.dumps(
+                {'base_dir': dirname(json.loads(revoc_reg_def_json)['value']['tailsLocation']),
+                 'uri_pattern': ''})
+            blob_storage_reader_cfg_handle = await blob_storage.open_reader('default', tails_reader_config)
+
+            logger.info('%s - Create Revocation State', actor)
+            rev_state_json = \
+                await anoncreds.create_revocation_state(blob_storage_reader_cfg_handle, revoc_reg_def_json,
+                                                        revoc_reg_delta_json, t, item['cred_rev_id'])
+            rev_states[rev_reg_id] = {t: json.loads(rev_state_json)}
+
+    return json.dumps(schemas), json.dumps(cred_defs), json.dumps(rev_states)
+
+
 if __name__ == '__main__':
     run_coroutine(run)
     time.sleep(1)

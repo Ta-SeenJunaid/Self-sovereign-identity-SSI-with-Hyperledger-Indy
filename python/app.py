@@ -395,6 +395,26 @@ async def run():
 
 
 
+    emon['schemas_for_job_application'], emon['cred_defs_for_job_application'], \
+    emon['revoc_states_for_job_application'] = \
+        await prover_get_entities_from_ledger(emon['pool'], emon['did'],
+                                              emon['creds_for_job_application_proof'], emon['name'])
+
+    logger.info("\"Emon\" -> Create \"Job-Application\" Proof")
+    emon['job_application_requested_creds'] = json.dumps({
+        'self_attested_attributes': {
+            'attr1_referent': 'Emon',
+            'attr2_referent': 'Sagor',
+            'attr6_referent': '123-45-6789'
+        },
+        'requested_attributes': {
+            'attr3_referent': {'cred_id': cred_for_attr3['referent'], 'revealed': True},
+            'attr4_referent': {'cred_id': cred_for_attr4['referent'], 'revealed': True},
+            'attr5_referent': {'cred_id': cred_for_attr5['referent'], 'revealed': True},
+        },
+        'requested_predicates': {'predicate1_referent': {'cred_id': cred_for_predicate1['referent']}}
+    })
+
 
 
 

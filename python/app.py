@@ -367,6 +367,33 @@ async def run():
         }
     })
 
+    logger.info("\"BJIT\" -> Send \"Job-Application\" Proof Request to Emon")
+    emon['job_application_proof_request'] = bjit['job_application_proof_request']
+
+    logger.info("\"Emon\" -> Get credentials for \"Job-Application\" Proof Request")
+
+    search_for_job_application_proof_request = \
+        await anoncreds.prover_search_credentials_for_proof_req(emon['wallet'],
+                                                                emon['job_application_proof_request'], None)
+
+    cred_for_attr1 = await get_credential_for_referent(search_for_job_application_proof_request, 'attr1_referent')
+    cred_for_attr2 = await get_credential_for_referent(search_for_job_application_proof_request, 'attr2_referent')
+    cred_for_attr3 = await get_credential_for_referent(search_for_job_application_proof_request, 'attr3_referent')
+    cred_for_attr4 = await get_credential_for_referent(search_for_job_application_proof_request, 'attr4_referent')
+    cred_for_attr5 = await get_credential_for_referent(search_for_job_application_proof_request, 'attr5_referent')
+    cred_for_predicate1 = \
+        await get_credential_for_referent(search_for_job_application_proof_request, 'predicate1_referent')
+
+    await anoncreds.prover_close_credentials_search_for_proof_req(search_for_job_application_proof_request)
+
+    emon['creds_for_job_application_proof'] = {cred_for_attr1['referent']: cred_for_attr1,
+                                                cred_for_attr2['referent']: cred_for_attr2,
+                                                cred_for_attr3['referent']: cred_for_attr3,
+                                                cred_for_attr4['referent']: cred_for_attr4,
+                                                cred_for_attr5['referent']: cred_for_attr5,
+                                                cred_for_predicate1['referent']: cred_for_predicate1}
+
+
 
 
 
@@ -464,9 +491,11 @@ async def send_nym(pool_handle, wallet_handle, _did, new_did, new_key, role):
     nym_request = await ledger.build_nym_request(_did, new_did, new_key, None, role)
     await ledger.sign_and_submit_request(pool_handle, wallet_handle, _did, nym_request)
 
+
 async def send_schema(pool_handle, wallet_handle, _did, schema):
     schema_request = await ledger.build_schema_request(_did, schema)
     await ledger.sign_and_submit_request(pool_handle, wallet_handle, _did, schema_request)
+
 
 async def get_schema(pool_handle, _did, schema_id):
     get_schema_request = await ledger.build_get_schema_request(_did, schema_id)
@@ -474,9 +503,11 @@ async def get_schema(pool_handle, _did, schema_id):
         pool_handle, get_schema_request, lambda response: response['result']['data'] is not None)
     return await ledger.parse_get_schema_response(get_schema_response)
 
+
 async def send_cred_def(pool_handle, wallet_handle, _did, cred_def_json):
     cred_def_request = await ledger.build_cred_def_request(_did, cred_def_json)
     await ledger.sign_and_submit_request(pool_handle, wallet_handle, _did, cred_def_request)
+
 
 async def get_cred_def(pool_handle, _did, cred_def_id):
     get_cred_def_request = await ledger.build_get_cred_def_request(_did, cred_def_id)
@@ -484,6 +515,12 @@ async def get_cred_def(pool_handle, _did, cred_def_id):
         await ensure_previous_request_applied(pool_handle, get_cred_def_request,
                                               lambda response: response['result']['data'] is not None)
     return await ledger.parse_get_cred_def_response(get_cred_def_response)
+
+
+async def get_credential_for_referent(search_handle, referent):
+    credentials = json.loads(
+        await anoncreds.prover_fetch_credentials_for_proof_req(search_handle, referent, 10))
+    return credentials[0]['cred_info']
 
 if __name__ == '__main__':
     run_coroutine(run)

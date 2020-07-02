@@ -609,6 +609,44 @@ async def prover_get_entities_from_ledger(pool_handle, _did, identifiers, actor,
 
     return json.dumps(schemas), json.dumps(cred_defs), json.dumps(rev_states)
 
+async def verifier_get_entities_from_ledger(pool_handle, _did, identifiers, actor, timestamp=None):
+    schemas = {}
+    cred_defs = {}
+    rev_reg_defs = {}
+    rev_regs = {}
+    for item in identifiers:
+        logger.info("\"{}\" -> Get Schema from Ledger".format(actor))
+        (received_schema_id, received_schema) = await get_schema(pool_handle, _did, item['schema_id'])
+        schemas[received_schema_id] = json.loads(received_schema)
+
+        logger.info("\"{}\" -> Get Claim Definition from Ledger".format(actor))
+        (received_cred_def_id, received_cred_def) = await get_cred_def(pool_handle, _did, item['cred_def_id'])
+        cred_defs[received_cred_def_id] = json.loads(received_cred_def)
+
+        if 'rev_reg_id' in item and item['rev_reg_id'] is not None:
+            # Get Revocation Definitions and Revocation Registries
+            logger.info("\"{}\" -> Get Revocation Definition from Ledger".format(actor))
+            get_revoc_reg_def_request = await ledger.build_get_revoc_reg_def_request(_did, item['rev_reg_id'])
+
+            get_revoc_reg_def_response = \
+                await ensure_previous_request_applied(pool_handle, get_revoc_reg_def_request,
+                                                      lambda response: response['result']['data'] is not None)
+            (rev_reg_id, revoc_reg_def_json) = await ledger.parse_get_revoc_reg_def_response(get_revoc_reg_def_response)
+
+            logger.info("\"{}\" -> Get Revocation Registry from Ledger".format(actor))
+            if not timestamp: timestamp = item['timestamp']
+            get_revoc_reg_request = \
+                await ledger.build_get_revoc_reg_request(_did, item['rev_reg_id'], timestamp)
+            get_revoc_reg_response = \
+                await ensure_previous_request_applied(pool_handle, get_revoc_reg_request,
+                                                      lambda response: response['result']['data'] is not None)
+            (rev_reg_id, rev_reg_json, timestamp2) = await ledger.parse_get_revoc_reg_response(get_revoc_reg_response)
+
+            rev_regs[rev_reg_id] = {timestamp2: json.loads(rev_reg_json)}
+            rev_reg_defs[rev_reg_id] = json.loads(revoc_reg_def_json)
+
+    return json.dumps(schemas), json.dumps(cred_defs), json.dumps(rev_reg_defs), json.dumps(rev_regs)
+
 
 if __name__ == '__main__':
     run_coroutine(run)

@@ -417,6 +417,19 @@ async def run():
         'requested_predicates': {'predicate1_referent': {'cred_id': cred_for_predicate1['referent']}}
     })
 
+    emon['job_application_proof'] = \
+        await anoncreds.prover_create_proof(emon['wallet'], emon['job_application_proof_request'],
+                                            emon['job_application_requested_creds'], emon['master_secret_id'],
+                                            emon['schemas_for_job_application'],
+                                            emon['cred_defs_for_job_application'],
+                                            emon['revoc_states_for_job_application'])
+
+    logger.info("\"Emon\" -> Send \"Job-Application\" Proof to BJIT")
+    bjit['job_application_proof'] = emon['job_application_proof']
+
+    job_application_proof_object = json.loads(bjit['job_application_proof'])
+
+
 
 
 

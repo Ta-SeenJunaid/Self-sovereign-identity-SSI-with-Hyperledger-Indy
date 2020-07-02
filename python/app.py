@@ -13,6 +13,8 @@ from indy.error import ErrorCode, IndyError
 
 import time
 
+from os.path import dirname
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
@@ -418,6 +420,10 @@ async def run():
 
 
 
+
+
+
+
     logger.info("==============================")
 
     logger.info(" \"Bd Steward\" -> Close and Delete wallet")
@@ -541,6 +547,7 @@ async def get_credential_for_referent(search_handle, referent):
     credentials = json.loads(
         await anoncreds.prover_fetch_credentials_for_proof_req(search_handle, referent, 10))
     return credentials[0]['cred_info']
+
 
 async def prover_get_entities_from_ledger(pool_handle, _did, identifiers, actor, timestamp_from=None,
                                           timestamp_to=None):

@@ -465,6 +465,23 @@ async def run():
 
     job_certificate_cred_offer_object = json.loads(emon['job_certificate_cred_offer'])
 
+    logger.info("\"Emon\" -> Create and store in Wallet \"Job-Certificate\" Credential Request for BJIT")
+    (emon['job_certificate_cred_request'], emon['job_certificate_cred_request_metadata']) = \
+        await anoncreds.prover_create_credential_req(emon['wallet'], emon['did'],
+                                                     emon['job_certificate_cred_offer'],
+                                                     emon['bjit_job_certificate_cred_def'], emon['master_secret_id'])
+
+    logger.info("\"Emon\" -> Send \"Job-Certificate\" Credential Request to BJIT")
+    emon['job_certificate_cred_values'] = json.dumps({
+        "first_name": {"raw": "Emon", "encoded": "245712572474217942457235975012103335"},
+        "last_name": {"raw": "Sagor", "encoded": "312643218496194691632153761283356127"},
+        "employee_status": {"raw": "Permanent", "encoded": "2143135425425143112321314321"},
+        "salary": {"raw": "2400", "encoded": "2400"},
+        "experience": {"raw": "10", "encoded": "10"}
+    })
+    bjit['job_certificate_cred_request'] = emon['job_certificate_cred_request']
+    bjit['job_certificate_cred_values'] = emon['job_certificate_cred_values']
+
 
 
 

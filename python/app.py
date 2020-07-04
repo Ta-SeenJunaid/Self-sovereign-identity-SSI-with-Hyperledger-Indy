@@ -429,6 +429,30 @@ async def run():
 
     job_application_proof_object = json.loads(bjit['job_application_proof'])
 
+    bjit['schemas_for_job_application'], bjit['cred_defs_for_job_application'], \
+    bjit['revoc_ref_defs_for_job_application'], bjit['revoc_regs_for_job_application'] = \
+        await verifier_get_entities_from_ledger(bjit['pool'], bjit['did'],
+                                                job_application_proof_object['identifiers'], bjit['name'])
+
+    logger.info("\"BJIT\" -> Verify \"Job-Application\" Proof from Emon")
+    assert 'Bachelor of Science, Marketing' == \
+           job_application_proof_object['requested_proof']['revealed_attrs']['attr3_referent']['raw']
+    assert 'graduated' == \
+           job_application_proof_object['requested_proof']['revealed_attrs']['attr4_referent']['raw']
+    assert '123-45-6789' == \
+           job_application_proof_object['requested_proof']['revealed_attrs']['attr5_referent']['raw']
+
+    assert 'Emon' == job_application_proof_object['requested_proof']['self_attested_attrs']['attr1_referent']
+    assert 'Garcia' == job_application_proof_object['requested_proof']['self_attested_attrs']['attr2_referent']
+    assert '123-45-6789' == job_application_proof_object['requested_proof']['self_attested_attrs']['attr6_referent']
+
+    assert await anoncreds.verifier_verify_proof(bjit['job_application_proof_request'], bjit['job_application_proof'],
+                                                 bjit['schemas_for_job_application'],
+                                                 bjit['cred_defs_for_job_application'],
+                                                 bjit['revoc_ref_defs_for_job_application'],
+                                                 bjit['revoc_regs_for_job_application'])
+
+
 
 
 

@@ -452,6 +452,20 @@ async def run():
                                                  bjit['revoc_ref_defs_for_job_application'],
                                                  bjit['revoc_regs_for_job_application'])
 
+    logger.info("==============================")
+    logger.info("== Apply for the job with BJIT - Getting Job-Certificate Credential ==")
+    logger.info("------------------------------")
+
+    logger.info("\"BJIT\" -> Create \"Job-Certificate\" Credential Offer for Emon")
+    bjit['job_certificate_cred_offer'] = \
+        await anoncreds.issuer_create_credential_offer(bjit['wallet'], bjit['job_certificate_cred_def_id'])
+
+    logger.info("\"BJIT\" -> Send \"Job-Certificate\" Credential Offer to Emon")
+    emon['job_certificate_cred_offer'] = bjit['job_certificate_cred_offer']
+
+    job_certificate_cred_offer_object = json.loads(emon['job_certificate_cred_offer'])
+
+
 
 
 

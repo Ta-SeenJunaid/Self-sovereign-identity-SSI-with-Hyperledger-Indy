@@ -504,6 +504,20 @@ async def run():
     emon['job_certificate_cred'] = bjit['job_certificate_cred']
     job_certificate_cred_object = json.loads(emon['job_certificate_cred'])
 
+    logger.info("\"Emon\" -> Gets RevocationRegistryDefinition for \"Job-Certificate\" Credential from BJIT")
+    emon['bjit_revoc_reg_des_req'] = \
+        await ledger.build_get_revoc_reg_def_request(emon['did'],
+                                                     job_certificate_cred_object['rev_reg_id'])
+    emon['bjit_revoc_reg_des_resp'] = \
+        await ensure_previous_request_applied(emon['pool'], emon['bjit_revoc_reg_des_req'],
+                                              lambda response: response['result']['data'] is not None)
+    (emon['bjit_revoc_reg_def_id'], emon['bjit_revoc_reg_def_json']) = \
+        await ledger.parse_get_revoc_reg_def_response(emon['bjit_revoc_reg_des_resp'])
+
+    logger.info("\"Emon\" -> Store \"Job-Certificate\" Credential")
+    await anoncreds.prover_store_credential(emon['wallet'], None, emon['job_certificate_cred_request_metadata'],
+                                            emon['job_certificate_cred'],
+                                            emon['bjit_job_certificate_cred_def'], emon['bjit_revoc_reg_def_json'])
 
 
 

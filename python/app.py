@@ -485,7 +485,24 @@ async def run():
     bjit['job_certificate_cred_values'] = emon['job_certificate_cred_values']
 
 
+    logger.info("\"BJIT\" -> Create \"Job-Certificate\" Credential for Emon")
+    bjit['blob_storage_reader_cfg_handle'] = await blob_storage.open_reader('default', bjit['tails_writer_config'])
+    bjit['job_certificate_cred'], bjit['job_certificate_cred_rev_id'], bjit['emon_cert_rev_reg_delta'] = \
+        await anoncreds.issuer_create_credential(bjit['wallet'], bjit['job_certificate_cred_offer'],
+                                                 bjit['job_certificate_cred_request'],
+                                                 bjit['job_certificate_cred_values'],
+                                                 bjit['revoc_reg_id'],
+                                                 bjit['blob_storage_reader_cfg_handle'])
 
+    logger.info("\"BJIT\" -> Post Revocation Registry Delta to Ledger")
+    bjit['revoc_reg_entry_req'] = \
+        await ledger.build_revoc_reg_entry_request(bjit['did'], bjit['revoc_reg_id'], 'CL_ACCUM',
+                                                   bjit['emon_cert_rev_reg_delta'])
+    await ledger.sign_and_submit_request(bjit['pool'], bjit['wallet'], bjit['did'], bjit['revoc_reg_entry_req'])
+
+    logger.info("\"BJIT\" -> Send \"Job-Certificate\" Credential to Emon")
+    emon['job_certificate_cred'] = bjit['job_certificate_cred']
+    job_certificate_cred_object = json.loads(emon['job_certificate_cred'])
 
 
 

@@ -395,8 +395,6 @@ async def run():
                                                 cred_for_attr5['referent']: cred_for_attr5,
                                                 cred_for_predicate1['referent']: cred_for_predicate1}
 
-
-
     emon['schemas_for_job_application'], emon['cred_defs_for_job_application'], \
     emon['revoc_states_for_job_application'] = \
         await prover_get_entities_from_ledger(emon['pool'], emon['did'],
@@ -443,7 +441,7 @@ async def run():
            job_application_proof_object['requested_proof']['revealed_attrs']['attr5_referent']['raw']
 
     assert 'Emon' == job_application_proof_object['requested_proof']['self_attested_attrs']['attr1_referent']
-    assert 'Garcia' == job_application_proof_object['requested_proof']['self_attested_attrs']['attr2_referent']
+    assert 'Sagor' == job_application_proof_object['requested_proof']['self_attested_attrs']['attr2_referent']
     assert '123-45-6789' == job_application_proof_object['requested_proof']['self_attested_attrs']['attr6_referent']
 
     assert await anoncreds.verifier_verify_proof(bjit['job_application_proof_request'], bjit['job_application_proof'],
@@ -465,6 +463,10 @@ async def run():
 
     job_certificate_cred_offer_object = json.loads(emon['job_certificate_cred_offer'])
 
+    logger.info("\"Emon\" -> Get \"BJIT Job-Certificate\" Credential Definition from Ledger")
+    (emon['bjit_job_certificate_cred_def_id'], emon['bjit_job_certificate_cred_def']) = \
+        await get_cred_def(emon['pool'], emon['did'], job_certificate_cred_offer_object['cred_def_id'])
+
     logger.info("\"Emon\" -> Create and store in Wallet \"Job-Certificate\" Credential Request for BJIT")
     (emon['job_certificate_cred_request'], emon['job_certificate_cred_request_metadata']) = \
         await anoncreds.prover_create_credential_req(emon['wallet'], emon['did'],
@@ -481,6 +483,7 @@ async def run():
     })
     bjit['job_certificate_cred_request'] = emon['job_certificate_cred_request']
     bjit['job_certificate_cred_values'] = emon['job_certificate_cred_values']
+
 
 
 

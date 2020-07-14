@@ -519,6 +519,46 @@ async def run():
                                             emon['job_certificate_cred'],
                                             emon['bjit_job_certificate_cred_def'], emon['bjit_revoc_reg_def_json'])
 
+    logger.info("==============================")
+    logger.info("=== Apply for the loan with City ==")
+    logger.info("==============================")
+
+
+    async def apply_loan_basic():
+        # This method will be called twice: once with a valid Job-Certificate and
+        # the second time after the Job-Certificate has been revoked.
+        logger.info("==============================")
+        logger.info("== Apply for the loan with City - Job-Certificate proving  ==")
+        logger.info("------------------------------")
+
+        logger.info("\"City\" -> Create \"Loan-Application-Basic\" Proof Request")
+        nonce = await anoncreds.generate_nonce()
+        city['apply_loan_proof_request'] = json.dumps({
+            'nonce': nonce,
+            'name': 'Loan-Application-Basic',
+            'version': '0.1',
+            'requested_attributes': {
+                'attr1_referent': {
+                    'name': 'employee_status',
+                    'restrictions': [{'cred_def_id': bjit['job_certificate_cred_def_id']}]
+                }
+            },
+            'requested_predicates': {
+                'predicate1_referent': {
+                    'name': 'salary',
+                    'p_type': '>=',
+                    'p_value': 2000,
+                    'restrictions': [{'cred_def_id': bjit['job_certificate_cred_def_id']}]
+                },
+                'predicate2_referent': {
+                    'name': 'experience',
+                    'p_type': '>=',
+                    'p_value': 1,
+                    'restrictions': [{'cred_def_id': bjit['job_certificate_cred_def_id']}]
+                }
+            },
+            'non_revoked': {'to': int(time.time())}
+        })
 
 
 

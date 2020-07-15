@@ -561,6 +561,33 @@ async def run():
         })
 
 
+        logger.info("\"City\" -> Send \"Loan-Application-Basic\" Proof Request to Emon")
+        emon['apply_loan_proof_request'] = city['apply_loan_proof_request']
+
+        logger.info("\"Emon\" -> Get credentials for \"Loan-Application-Basic\" Proof Request")
+
+        search_for_apply_loan_proof_request = \
+            await anoncreds.prover_search_credentials_for_proof_req(emon['wallet'],
+                                                                    emon['apply_loan_proof_request'], None)
+
+        cred_for_attr1 = await get_credential_for_referent(search_for_apply_loan_proof_request, 'attr1_referent')
+        cred_for_predicate1 = await get_credential_for_referent(search_for_apply_loan_proof_request,
+                                                                'predicate1_referent')
+        cred_for_predicate2 = await get_credential_for_referent(search_for_apply_loan_proof_request,
+                                                                'predicate2_referent')
+
+        await anoncreds.prover_close_credentials_search_for_proof_req(search_for_apply_loan_proof_request)
+
+        emon['creds_for_apply_loan_proof'] = {cred_for_attr1['referent']: cred_for_attr1,
+                                               cred_for_predicate1['referent']: cred_for_predicate1,
+                                               cred_for_predicate2['referent']: cred_for_predicate2}
+
+        requested_timestamp = int(json.loads(city['apply_loan_proof_request'])['non_revoked']['to'])
+        emon['schemas_for_loan_app'], emon['cred_defs_for_loan_app'], emon['revoc_states_for_loan_app'] = \
+            await prover_get_entities_from_ledger(emon['pool'], emon['did'],
+                                                  emon['creds_for_apply_loan_proof'],
+                                                  emon['name'], None, requested_timestamp)
+
 
 
 

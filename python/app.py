@@ -589,7 +589,29 @@ async def run():
                                                   emon['name'], None, requested_timestamp)
 
 
-
+        logger.info("\"Emon\" -> Create \"Loan-Application-Basic\" Proof")
+        revoc_states_for_loan_app = json.loads(emon['revoc_states_for_loan_app'])
+        timestamp_for_attr1 = get_timestamp_for_attribute(cred_for_attr1, revoc_states_for_loan_app)
+        timestamp_for_predicate1 = get_timestamp_for_attribute(cred_for_predicate1, revoc_states_for_loan_app)
+        timestamp_for_predicate2 = get_timestamp_for_attribute(cred_for_predicate2, revoc_states_for_loan_app)
+        emon['apply_loan_requested_creds'] = json.dumps({
+            'self_attested_attributes': {},
+            'requested_attributes': {
+                'attr1_referent': {'cred_id': cred_for_attr1['referent'], 'revealed': True,
+                                   'timestamp': timestamp_for_attr1}
+            },
+            'requested_predicates': {
+                'predicate1_referent': {'cred_id': cred_for_predicate1['referent'],
+                                        'timestamp': timestamp_for_predicate1},
+                'predicate2_referent': {'cred_id': cred_for_predicate2['referent'],
+                                        'timestamp': timestamp_for_predicate2}
+            }
+        })
+        emon['apply_loan_proof'] = \
+            await anoncreds.prover_create_proof(emon['wallet'], emon['apply_loan_proof_request'],
+                                                emon['apply_loan_requested_creds'], emon['master_secret_id'],
+                                                emon['schemas_for_loan_app'], emon['cred_defs_for_loan_app'],
+                                                emon['revoc_states_for_loan_app'])
 
 
 
@@ -803,6 +825,11 @@ async def verifier_get_entities_from_ledger(pool_handle, _did, identifiers, acto
 
     return json.dumps(schemas), json.dumps(cred_defs), json.dumps(rev_reg_defs), json.dumps(rev_regs)
 
+def get_timestamp_for_attribute(cred_for_attribute, revoc_states):
+    if cred_for_attribute['rev_reg_id'] in revoc_states:
+        return int(next(iter(revoc_states[cred_for_attribute['rev_reg_id']])))
+    else:
+        return None
 
 if __name__ == '__main__':
     run_coroutine(run)

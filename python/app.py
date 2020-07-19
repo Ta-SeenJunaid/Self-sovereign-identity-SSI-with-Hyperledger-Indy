@@ -681,6 +681,26 @@ async def run():
         await prover_get_entities_from_ledger(emon['pool'], emon['did'],
                                               emon['creds_for_apply_loan_kyc_proof'], emon['name'], )
 
+
+    logger.info("\"Emon\" -> Create \"Loan-Application-KYC\" Proof")
+    revoc_states_for_loan_app = json.loads(emon['revoc_states_for_loan_kyc_app'])
+    timestamp_for_attr1 = get_timestamp_for_attribute(cred_for_attr1, revoc_states_for_loan_app)
+    timestamp_for_attr2 = get_timestamp_for_attribute(cred_for_attr2, revoc_states_for_loan_app)
+    timestamp_for_attr3 = get_timestamp_for_attribute(cred_for_attr3, revoc_states_for_loan_app)
+    emon['apply_loan_kyc_requested_creds'] = json.dumps({
+        'self_attested_attributes': {},
+        'requested_attributes': {
+            'attr1_referent': {'cred_id': cred_for_attr1['referent'], 'revealed': True,
+                               'timestamp': timestamp_for_attr1},
+            'attr2_referent': {'cred_id': cred_for_attr2['referent'], 'revealed': True,
+                               'timestamp': timestamp_for_attr2},
+            'attr3_referent': {'cred_id': cred_for_attr3['referent'], 'revealed': True,
+                               'timestamp': timestamp_for_attr3}
+        },
+        'requested_predicates': {}
+    })
+
+
     logger.info("==============================")
 
     logger.info(" \"Bd Steward\" -> Close and Delete wallet")

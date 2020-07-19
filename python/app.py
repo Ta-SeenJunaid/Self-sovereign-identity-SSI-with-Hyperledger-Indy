@@ -631,6 +631,35 @@ async def run():
         assert 'Permanent' == \
                apply_loan_proof_object['requested_proof']['revealed_attrs']['attr1_referent']['raw']
 
+    await apply_loan_basic()
+
+    assert await anoncreds.verifier_verify_proof(city['apply_loan_proof_request'],
+                                                 city['apply_loan_proof'],
+                                                 city['schemas_for_loan_app'],
+                                                 city['cred_defs_for_loan_app'],
+                                                 city['revoc_defs_for_loan_app'],
+                                                 city['revoc_regs_for_loan_app'])
+
+    logger.info("==============================")
+    logger.info("== Apply for the loan with City - Transcript and Job-Certificate proving  ==")
+    logger.info("------------------------------")
+
+    logger.info("\"City\" -> Create \"Loan-Application-KYC\" Proof Request")
+    nonce = await anoncreds.generate_nonce()
+    city['apply_loan_kyc_proof_request'] = json.dumps({
+        'nonce': nonce,
+        'name': 'Loan-Application-KYC',
+        'version': '0.1',
+        'requested_attributes': {
+            'attr1_referent': {'name': 'first_name'},
+            'attr2_referent': {'name': 'last_name'},
+            'attr3_referent': {'name': 'ssn'}
+        },
+        'requested_predicates': {}
+    })
+
+    logger.info("\"City\" -> Send \"Loan-Application-KYC\" Proof Request to Emon")
+    emon['apply_loan_kyc_proof_request'] = city['apply_loan_kyc_proof_request']
 
 
 

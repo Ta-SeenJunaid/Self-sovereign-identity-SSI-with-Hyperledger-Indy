@@ -747,6 +747,28 @@ async def run():
                                                  bjit['job_certificate_cred_rev_id'])
 
 
+    logger.info("\"BJIT\" - Post RevocationRegistryDelta to Ledger")
+    bjit['revoc_reg_entry_req'] = \
+        await ledger.build_revoc_reg_entry_request(bjit['did'], bjit['revoc_reg_id'], 'CL_ACCUM',
+                                                   bjit['emon_cert_rev_reg_delta'])
+    await ledger.sign_and_submit_request(bjit['pool'], bjit['wallet'], bjit['did'], bjit['revoc_reg_entry_req'])
+
+    logger.info("==============================")
+
+    logger.info("==============================")
+    logger.info("== Apply for the loan with City again - Job-Certificate proving  ==")
+    logger.info("------------------------------")
+
+    await apply_loan_basic()
+
+    assert not await anoncreds.verifier_verify_proof(city['apply_loan_proof_request'],
+                                                     city['apply_loan_proof'],
+                                                     city['schemas_for_loan_app'],
+                                                     city['cred_defs_for_loan_app'],
+                                                     city['revoc_defs_for_loan_app'],
+                                                     city['revoc_regs_for_loan_app'])
+
+
     logger.info("==============================")
 
     logger.info(" \"Bd Steward\" -> Close and Delete wallet")

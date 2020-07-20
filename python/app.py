@@ -733,6 +733,19 @@ async def run():
                                                  city['revoc_defs_for_loan_kyc_app'],
                                                  city['revoc_regs_for_loan_kyc_app'])
 
+    logger.info("==============================")
+
+    logger.info("==============================")
+    logger.info("== Credential revocation - BJIT revokes Emon's Job-Certificate  ==")
+    logger.info("------------------------------")
+
+    logger.info("\"BJIT\" - Revoke  credential")
+    bjit['emon_cert_rev_reg_delta'] = \
+        await anoncreds.issuer_revoke_credential(bjit['wallet'],
+                                                 bjit['blob_storage_reader_cfg_handle'],
+                                                 bjit['revoc_reg_id'],
+                                                 bjit['job_certificate_cred_rev_id'])
+
 
     logger.info("==============================")
 

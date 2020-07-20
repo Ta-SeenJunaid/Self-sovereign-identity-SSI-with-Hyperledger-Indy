@@ -700,6 +700,39 @@ async def run():
         'requested_predicates': {}
     })
 
+    emon['apply_loan_kyc_proof'] = \
+        await anoncreds.prover_create_proof(emon['wallet'], emon['apply_loan_kyc_proof_request'],
+                                            emon['apply_loan_kyc_requested_creds'], emon['master_secret_id'],
+                                            emon['schemas_for_loan_kyc_app'], emon['cred_defs_for_loan_kyc_app'],
+                                            emon['revoc_states_for_loan_kyc_app'])
+
+    logger.info("\"Emon\" -> Send \"Loan-Application-KYC\" Proof to City")
+    city['apply_loan_kyc_proof'] = emon['apply_loan_kyc_proof']
+    apply_loan_kyc_proof_object = json.loads(city['apply_loan_kyc_proof'])
+
+    logger.info("\"City\" -> Get Schemas, Credential Definitions and Revocation Registries from Ledger"
+                " required for Proof verifying")
+
+    city['schemas_for_loan_kyc_app'], city['cred_defs_for_loan_kyc_app'], city['revoc_defs_for_loan_kyc_app'], \
+    city['revoc_regs_for_loan_kyc_app'] = \
+        await verifier_get_entities_from_ledger(city['pool'], city['did'],
+                                                apply_loan_kyc_proof_object['identifiers'], city['name'])
+
+    logger.info("\"City\" -> Verify \"Loan-Application-KYC\" Proof from Emon")
+    assert 'Emon' == \
+           apply_loan_kyc_proof_object['requested_proof']['revealed_attrs']['attr1_referent']['raw']
+    assert 'Garcia' == \
+           apply_loan_kyc_proof_object['requested_proof']['revealed_attrs']['attr2_referent']['raw']
+    assert '123-45-6789' == \
+           apply_loan_kyc_proof_object['requested_proof']['revealed_attrs']['attr3_referent']['raw']
+
+    assert await anoncreds.verifier_verify_proof(city['apply_loan_kyc_proof_request'],
+                                                 city['apply_loan_kyc_proof'],
+                                                 city['schemas_for_loan_kyc_app'],
+                                                 city['cred_defs_for_loan_kyc_app'],
+                                                 city['revoc_defs_for_loan_kyc_app'],
+                                                 city['revoc_regs_for_loan_kyc_app'])
+
 
     logger.info("==============================")
 
